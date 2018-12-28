@@ -1,0 +1,133 @@
+﻿@using ShopifySharp
+@model ShopifySharp.Order
+@{
+    ViewBag.Title = "Order " + Model.Name;
+    //Grab the order's addresses. The billing address is optional and could be null.
+    var shipAddress = Model.ShippingAddress;
+    var billAddress = Model.BillingAddress ?? Model.Customer.DefaultAddress;
+}
+<style>
+    ul#items {
+        list-style-type: none;
+        padding: 0;
+    }
+</style>
+<h2>Order @Model.Name</h2>
+<div class="row">
+    <div class="col-md-8">
+        <h3>Line Items - @(Model.Fulfillments.Count()) fulfilled</h3>
+        <!-- TODO: Show and fulfill line items -->
+        <!-- /TODO -->
+        <h3>Ship to</h3>
+        <div>
+            @shipAddress.Name <br />
+            @shipAddress.Address1 @shipAddress.Address2 <br />
+            @shipAddress.City @shipAddress.ProvinceCode @shipAddress.Zip
+        </div>
+        <h3>Shipping Numbers</h3>
+        <ul>
+            @foreach (var fulfillment in Model.Fulfillments)
+            {
+                //Note: Not all fulfillments will have a tracking number, company or URL.
+                <li>
+                    @fulfillment.TrackingCompany:
+                    <a href="@fulfillment.TrackingUrl">
+                        @fulfillment.TrackingNumber
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="col-md-4">
+        <h3>Customer</h3>
+        <p>
+            @Model.Customer.FirstName @Model.Customer.LastName
+            <br />
+            @Model.Customer.Email
+        </p>
+        <h3>
+            Billing Address
+        </h3>
+        <div>
+            @billAddress.Name <br />
+            @billAddress.Address1 @billAddress.Address2 <br />
+            @billAddress.City @billAddress.ProvinceCode @billAddress.Zip
+        </div>
+        <h3>
+            Financial Status
+        </h3>
+        <p>
+            @Model.FinancialStatus
+        </p>
+        <h3>
+            Actions
+        </h3>
+        <form method='post' action='~/dashboard/SetStatus/@ViewBag.OrderId'>
+            @Html.AntiForgeryToken()
+            @if (Model.ClosedAt == null)
+            {
+                <input type='hidden' name='status' value='closed' />
+                <button class='btn btn-primary' type='submit'>
+                    Close Order
+                </button>
+            }
+            else
+            {
+                <input type='hidden' name='status' value='open' />
+                <button class='btn btn-default' type='submit'>
+                    Open Order
+                </button>
+            }
+        </form>
+    </div>
+</div>
+<h3>Line Items - @(Model.Fulfillments.Count()) fulfilled</h3>
+<form method="post" action="~/dashboard/fulfill/@ViewBag.OrderId">
+    @Html.AntiForgeryToken()
+    <ul id="items">
+        @foreach (var item in Model.LineItems)
+        {
+            var fulfillment =
+            item.FulfillmentStatus == String.Empty || item.FulfillmentStatus == "open"
+            ? "Not Fulfilled"
+            : item.FulfillmentStatus;
+            var disabled = item.FulfillmentStatus == "success" ?
+            "disabled=disabled" : "";
+            <li class="checkbox">
+                <label>
+                    <input type="checkbox"
+                           name="items"
+                           @disabled
+                           value="@item.Id.Value" />
+                    @item.Quantity x @item.Name — @fulfillment
+                </label>
+            </li>
+        }
+    </ul>
+    @if (Model.LineItems.Any(li => li.FulfillmentStatus != "success"))
+    {
+        <div class='form-group'>
+            <label class='control-label'>
+                Shipping Company
+            </label>
+            <input type='text' class='form-control' name='company' />
+        </div>
+        <div class='form-group'>
+            <label class='control-label'>
+                Tracking Number
+            </label>
+            <input type='text' class='form-control' name='number' />
+        </div>
+        <div class='form-group'>
+            <label class='control-label'>
+                Tracking URL
+            </label>
+            <input type='text' class='form-control' name='url' />
+        </div>
+        <button type="submit" class="btn btn-primary">Fulfill Selected Items</button>
+    }
+</form>
+<h3>Ship to</h3>
+
+
+

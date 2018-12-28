@@ -1,0 +1,86 @@
+﻿@model IEnumerable<AuntieDot.Models.DbOrder>
+@{
+    ViewBag.Title = "Dashboard";
+    int page = 1;
+    if (!int.TryParse(Request.QueryString["page"], out page))
+    {
+        //If the page couldn't be parsed, set it to 1
+        page = 1;
+    }
+}
+<style>
+    .total {
+        margin-top: 30px;
+    }
+</style>
+<h2>
+    Your orders (@ViewBag.TotalOrders total).
+</h2>
+<div class='row total'>
+    <div class='col-xs-6'>
+        <form method="post" action="~/dashboard/import">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-primary" type="submit">
+                Import Open Orders
+            </button>
+        </form>
+    </div>
+    <div class='col-xs-6 form-group'>
+        <select class="form-control pull-right"
+                onchange="window.location.href = '/dashboard/?page=' + this.value; ">
+            @for (var i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                var selected = i == page ? "selected=selected" : null;
+                <option value='@i' @selected>Page @i</option>
+            }
+        </select>
+    </div>
+</div>
+<table class='table table-striped'>
+    <thead>
+        <tr>
+            <th>
+                Id
+            </th>
+            <th>
+                Date
+            </th>
+            <th>
+                Summary of Line Items
+            </th>
+            <th>
+                Customer Name
+            </th>
+            <th>
+                Status
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>
+                    <a href='~/dashboard/order/@order.Id'>
+                        @order.DisplayId
+                    </a>
+                </td>
+                <td>
+                    @order.DateCreated.ToString()
+                </td>
+                <td>
+                    @order.LineItemSummary
+                </td>
+                <td>
+                    @order.CustomerName
+                </td>
+                <td>
+                    @(order.IsOpen ? "Open" : "Closed")
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
